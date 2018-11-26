@@ -7,12 +7,14 @@ package main
 
 import (
 	"fmt"
-	"git.zx2c4.com/wireguard-go/tun"
 	"os"
 	"os/signal"
 	"runtime"
 	"strconv"
 	"syscall"
+
+	"git.zx2c4.com/wireguard-go/device"
+	"git.zx2c4.com/wireguard-go/tun"
 )
 
 const (
@@ -117,26 +119,26 @@ func main() {
 	logLevel := func() int {
 		switch os.Getenv("LOG_LEVEL") {
 		case "debug":
-			return LogLevelDebug
+			return device.LogLevelDebug
 		case "info":
-			return LogLevelInfo
+			return device.LogLevelInfo
 		case "error":
-			return LogLevelError
+			return device.LogLevelError
 		case "silent":
-			return LogLevelSilent
+			return device.LogLevelSilent
 		}
-		return LogLevelInfo
+		return device.LogLevelInfo
 	}()
 
-	// open TUN device (or use supplied fd)
+	// open TUN dev (or use supplied fd)
 
 	tun, err := func() (tun.TUNDevice, error) {
 		tunFdStr := os.Getenv(ENV_WG_TUN_FD)
 		if tunFdStr == "" {
-			return tun.CreateTUN(interfaceName, DefaultMTU)
+			return tun.CreateTUN(interfaceName, device.DefaultMTU)
 		}
 
-		// construct tun device from supplied fd
+		// construct tun dev from supplied fd
 
 		fd, err := strconv.ParseUint(tunFdStr, 10, 32)
 		if err != nil {
@@ -144,7 +146,7 @@ func main() {
 		}
 
 		file := os.NewFile(uintptr(fd), "")
-		return tun.CreateTUNFromFile(file, DefaultMTU)
+		return tun.CreateTUNFromFile(file, device.DefaultMTU)
 	}()
 
 	if err == nil {
@@ -154,7 +156,7 @@ func main() {
 		}
 	}
 
-	logger := NewLogger(
+	logger := device.NewLogger(
 		logLevel,
 		fmt.Sprintf("(%s) ", interfaceName),
 	)
@@ -164,7 +166,7 @@ func main() {
 	logger.Debug.Println("Debug log enabled")
 
 	if err != nil {
-		logger.Error.Println("Failed to create TUN device:", err)
+		logger.Error.Println("Failed to create TUN dev:", err)
 		os.Exit(ExitSetupFailed)
 	}
 
@@ -173,7 +175,7 @@ func main() {
 	fileUAPI, err := func() (*os.File, error) {
 		uapiFdStr := os.Getenv(ENV_WG_UAPI_FD)
 		if uapiFdStr == "" {
-			return UAPIOpen(interfaceName)
+			return device.UAPIOpen(interfaceName)
 		}
 
 		// use supplied fd
@@ -199,7 +201,7 @@ func main() {
 		env = append(env, fmt.Sprintf("%s=4", ENV_WG_UAPI_FD))
 		env = append(env, fmt.Sprintf("%s=1", ENV_WG_PROCESS_FOREGROUND))
 		files := [3]*os.File{}
-		if os.Getenv("LOG_LEVEL") != "" && logLevel != LogLevelSilent {
+		if os.Getenv("LOG_LEVEL") != "" && logLevel != device.LogLevelSilent {
 			files[0], _ = os.Open(os.DevNull)
 			files[1] = os.Stdout
 			files[2] = os.Stderr
@@ -239,14 +241,14 @@ func main() {
 		return
 	}
 
-	device := NewDevice(tun, logger)
+	dev := device.NewDevice(tun, logger)
 
 	logger.Info.Println("Device started")
 
 	errs := make(chan error)
 	term := make(chan os.Signal, 1)
 
-	uapi, err := UAPIListen(interfaceName, fileUAPI)
+	uapi, err := device.UAPIListen(interfaceName, fileUAPI)
 	if err != nil {
 		logger.Error.Println("Failed to listen on uapi socket:", err)
 		os.Exit(ExitSetupFailed)
@@ -259,7 +261,7 @@ func main() {
 				errs <- err
 				return
 			}
-			go ipcHandle(device, conn)
+			go device.IpcHandle(dev, conn)
 		}
 	}()
 
@@ -273,13 +275,13 @@ func main() {
 	select {
 	case <-term:
 	case <-errs:
-	case <-device.Wait():
+	case <-dev.Wait():
 	}
 
 	// clean up
 
 	uapi.Close()
-	device.Close()
+	dev.Close()
 
 	logger.Info.Println("Shutting down")
 }
