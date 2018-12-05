@@ -87,7 +87,7 @@ func (expDev *DeviceApi) Close() {
 	expDev.device.Close()
 }
 
-func (expDev *DeviceApi) GetNetworkSocket() (int32, error) {
+func (expDev *DeviceApi) GetNetworkSocket() (int, error) {
 	return BindToSocketFd(expDev.device.net.bind)
 }
 

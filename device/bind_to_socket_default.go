@@ -5,7 +5,7 @@ package device
 import "errors"
 
 // taken from android wireguard integration - protecting socket with android tooling
-func BindToSocketFd(bind Bind) (int32, error) {
+func BindToSocketFd(bind Bind) (int, error) {
 	native, ok := bind.(*NativeBind)
 	if !ok {
 		return -1, errors.New("cannot cast to NativeBind")
@@ -16,9 +16,9 @@ func BindToSocketFd(bind Bind) (int32, error) {
 		return -1, err
 	}
 
-	var fd int32
+	var fd int
 	err = conn.Control(func(f uintptr) {
-		fd = int32(f)
+		fd = int(f)
 	})
 	if err != nil {
 		return -1, err
