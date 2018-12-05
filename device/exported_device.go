@@ -1,7 +1,6 @@
 package device
 
 import (
-	"errors"
 	"time"
 
 	"golang.zx2c4.com/wireguard/tun"
@@ -116,26 +115,4 @@ func peerToExternal(peer *Peer) ExternalPeer {
 		},
 		LastHanshake: int(peer.stats.lastHandshakeNano / time.Second.Nanoseconds()),
 	}
-}
-
-// taken from android wireguard integration - protecting socket with android tooling
-func BindToSocketFd(bind Bind) (int, error) {
-	native, ok := bind.(*nativeBind)
-	if !ok {
-		return -1, errors.New("cannot cast to NativeBind")
-	}
-
-	conn, err := native.ipv4.SyscallConn()
-	if err != nil {
-		return -1, err
-	}
-
-	var fd int
-	err = conn.Control(func(f uintptr) {
-		fd = int(f)
-	})
-	if err != nil {
-		return -1, err
-	}
-	return fd, nil
 }
