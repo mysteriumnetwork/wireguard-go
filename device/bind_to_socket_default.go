@@ -8,7 +8,7 @@ import "errors"
 func BindToSocketFd(bind Bind) (int, error) {
 	native, ok := bind.(*NativeBind)
 	if !ok {
-		return -1, errors.New("cannot cast to NativeBind")
+		return -1, errors.New("cannot cast to NativeBind(default)")
 	}
 
 	conn, err := native.ipv4.SyscallConn()

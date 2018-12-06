@@ -69,11 +69,11 @@ func (expDev *DeviceApi) AddPeer(peer ExternalPeer) error {
 func (expDev *DeviceApi) Peers() (externalPeers []ExternalPeer, err error) {
 	dev := expDev.device
 	dev.peers.mutex.RLock()
-	defer dev.peers.mutex.Unlock()
+	defer dev.peers.mutex.RUnlock()
 	for _, peer := range dev.peers.keyMap {
 		peer.mutex.RLock()
 		externalPeers = append(externalPeers, peerToExternal(peer))
-		peer.mutex.Unlock()
+		peer.mutex.RUnlock()
 	}
 
 	return externalPeers, err
@@ -85,6 +85,10 @@ func (expDev *DeviceApi) Wait() {
 
 func (expDev *DeviceApi) Close() {
 	expDev.device.Close()
+}
+
+func (expDev *DeviceApi) Boot() {
+	expDev.device.Up()
 }
 
 func (expDev *DeviceApi) GetNetworkSocket() (int, error) {
