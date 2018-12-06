@@ -1,6 +1,7 @@
 package device
 
 import (
+	"net"
 	"time"
 
 	"golang.zx2c4.com/wireguard/tun"
@@ -51,7 +52,7 @@ type ExternalPeer struct {
 	PublicKey       NoisePublicKey
 	RemoteEndpoint  Endpoint
 	KeepAlivePeriod uint16 //seconds
-
+	AllowedIPs      []string
 	//readable fields
 	Stats        Statistics
 	LastHanshake int //seconds
@@ -67,6 +68,15 @@ func (expDev *DeviceApi) AddPeer(peer ExternalPeer) error {
 	defer internalPeer.Unlock()
 	internalPeer.endpoint = peer.RemoteEndpoint
 	internalPeer.persistentKeepaliveInterval = peer.KeepAlivePeriod
+	for _, cidr := range peer.AllowedIPs {
+		_, network, err := net.ParseCIDR(cidr)
+		if err != nil {
+			return err
+		}
+		ones, _ := network.Mask.Size()
+		dev.allowedips.Insert(network.IP, uint(ones), internalPeer)
+	}
+
 	return nil
 }
 
@@ -80,7 +90,8 @@ func (expDev *DeviceApi) Peers() (externalPeers []ExternalPeer, err error) {
 	defer dev.peers.RUnlock()
 	for _, peer := range dev.peers.keyMap {
 		peer.RLock()
-		externalPeers = append(externalPeers, peerToExternal(peer))
+		allowedIPs := dev.allowedips.EntriesForPeer(peer)
+		externalPeers = append(externalPeers, peerToExternal(peer, allowedIPs))
 		peer.RUnlock()
 	}
 
@@ -103,12 +114,18 @@ func (expDev *DeviceApi) GetNetworkSocket() (int, error) {
 	return BindToSocketFd(expDev.device.net.bind)
 }
 
-func peerToExternal(peer *Peer) ExternalPeer {
+func peerToExternal(peer *Peer, allowedIPs []net.IPNet) ExternalPeer {
+
+	var subnets []string
+	for _, allowedIP := range allowedIPs {
+		subnets = append(subnets, allowedIP.String())
+	}
 
 	return ExternalPeer{
 		PublicKey:       peer.handshake.remoteStatic,
 		RemoteEndpoint:  peer.endpoint,
 		KeepAlivePeriod: peer.persistentKeepaliveInterval,
+		AllowedIPs:      subnets,
 		Stats: Statistics{
 			Received: peer.stats.rxBytes,
 			Sent:     peer.stats.txBytes,
