@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"git.zx2c4.com/wireguard-go/replay"
+	"github.com/mysteriumnetwork/wireguard-go/replay"
 )
 
 /* Due to limitations in Go and /x/crypto there is currently

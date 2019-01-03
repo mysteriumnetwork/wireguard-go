@@ -3,7 +3,7 @@ package tun
 import (
 	"os"
 
-	"git.zx2c4.com/wireguard-go/rwcancel"
+	"github.com/mysteriumnetwork/wireguard-go/rwcancel"
 )
 
 func AndroidTunDevice(fd int) (TUNDevice, error) {

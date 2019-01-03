@@ -9,13 +9,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"git.zx2c4.com/wireguard-go/rwcancel"
-	"golang.org/x/net/ipv6"
-	"golang.org/x/sys/unix"
 	"net"
 	"os"
 	"syscall"
 	"unsafe"
+
+	"github.com/mysteriumnetwork/wireguard-go/rwcancel"
+	"golang.org/x/net/ipv6"
+	"golang.org/x/sys/unix"
 )
 
 // _TUNSIFHEAD, value derived from sys/net/{if_tun,ioccom}.h
