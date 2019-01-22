@@ -13,9 +13,18 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"golang.zx2c4.com/wireguard/ipc"
+)
+
+const (
+	ipcErrorIO        = -int64(syscall.EIO)
+	ipcErrorProtocol  = -int64(syscall.EPROTO)
+	ipcErrorInvalid   = -int64(syscall.EINVAL)
+	ipcErrorPortInUse = -int64(syscall.EADDRINUSE)
+	socketName        = "%s.sock"
 )
 
 type IPCError struct {
