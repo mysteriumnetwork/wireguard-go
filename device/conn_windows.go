@@ -1,5 +1,3 @@
-// +build !linux android
-
 package device
 
 import "golang.org/x/sys/windows"
