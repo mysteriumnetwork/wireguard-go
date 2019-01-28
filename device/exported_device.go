@@ -4,7 +4,7 @@ import (
 	"net"
 	"time"
 
-	"git.zx2c4.com/wireguard-go/tun"
+	"github.com/mysteriumnetwork/wireguard-go/tun"
 )
 
 // The purpose of this DeviceApi is to wrap actual device and export variuos method which don't exist or

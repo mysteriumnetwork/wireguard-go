@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"git.zx2c4.com/wireguard-go/xchacha20poly1305"
+	"github.com/mysteriumnetwork/wireguard-go/xchacha20poly1305"
 	"golang.org/x/crypto/blake2s"
 	"golang.org/x/crypto/chacha20poly1305"
 )

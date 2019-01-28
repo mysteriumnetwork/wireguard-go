@@ -1,4 +1,4 @@
-module git.zx2c4.com/wireguard-go
+module github.com/mysteriumnetwork/wireguard-go
 
 require (
 	golang.org/x/crypto v0.0.0-20181001203147-e3636079e1a4

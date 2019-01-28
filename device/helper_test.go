@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 
-	"git.zx2c4.com/wireguard-go/tun"
+	"github.com/mysteriumnetwork/wireguard-go/tun"
 )
 
 /* Helpers for writing unit tests

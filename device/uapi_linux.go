@@ -12,7 +12,7 @@ import (
 	"os"
 	"path"
 
-	"git.zx2c4.com/wireguard-go/rwcancel"
+	"github.com/mysteriumnetwork/wireguard-go/rwcancel"
 	"golang.org/x/sys/unix"
 )
 
