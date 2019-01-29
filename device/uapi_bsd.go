@@ -20,14 +20,6 @@ import (
 
 var socketDirectory = "/var/run/wireguard"
 
-const (
-	ipcErrorIO        = -int64(unix.EIO)
-	ipcErrorProtocol  = -int64(unix.EPROTO)
-	ipcErrorInvalid   = -int64(unix.EINVAL)
-	ipcErrorPortInUse = -int64(unix.EADDRINUSE)
-	socketName        = "%s.sock"
-)
-
 type UAPIListener struct {
 	listener net.Listener // unix socket listener
 	connNew  chan net.Conn
