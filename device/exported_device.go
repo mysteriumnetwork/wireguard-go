@@ -76,6 +76,10 @@ func (expDev *DeviceApi) AddPeer(peer ExternalPeer) error {
 	return nil
 }
 
+func (expDev *DeviceApi) RemovePeer(publicKey NoisePublicKey) {
+	expDev.device.RemovePeer(publicKey)
+}
+
 func (expDev *DeviceApi) Peers() (externalPeers []ExternalPeer, err error) {
 	dev := expDev.device
 	dev.peers.mutex.RLock()
