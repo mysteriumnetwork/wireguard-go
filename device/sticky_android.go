@@ -17,12 +17,6 @@
 package device
 
 import (
-	"fmt"
-	"sync"
-	"unsafe"
-
-	"golang.org/x/sys/unix"
-
 	"golang.zx2c4.com/wireguard/conn"
 	"golang.zx2c4.com/wireguard/rwcancel"
 )
