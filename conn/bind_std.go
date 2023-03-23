@@ -27,7 +27,16 @@ type StdNetBind struct {
 
 func NewStdNetBind() Bind { return &StdNetBind{} }
 
-type StdNetEndpoint netip.AddrPort
+// type StdNetEndpoint netip.AddrPort
+type StdNetEndpoint struct {
+	// AddrPort is the endpoint destination.
+	netip.AddrPort
+	// src is the current sticky source address and interface index, if supported.
+	src struct {
+		netip.Addr
+		ifidx int32
+	}
+}
 
 var (
 	_ Bind     = (*StdNetBind)(nil)
@@ -36,13 +45,18 @@ var (
 
 func (*StdNetBind) ParseEndpoint(s string) (Endpoint, error) {
 	e, err := netip.ParseAddrPort(s)
-	return asEndpoint(e), err
+	if err != nil {
+		return nil, err
+	}
+	return &StdNetEndpoint{
+		AddrPort: e,
+	}, nil
 }
 
 func (StdNetEndpoint) ClearSrc() {}
 
 func (e StdNetEndpoint) DstIP() netip.Addr {
-	return (netip.AddrPort)(e).Addr()
+	return e.AddrPort.Addr()
 }
 
 func (e StdNetEndpoint) SrcIP() netip.Addr {
@@ -50,12 +64,12 @@ func (e StdNetEndpoint) SrcIP() netip.Addr {
 }
 
 func (e StdNetEndpoint) DstToBytes() []byte {
-	b, _ := (netip.AddrPort)(e).MarshalBinary()
+	b, _ := e.AddrPort.Addr().MarshalBinary()
 	return b
 }
 
 func (e StdNetEndpoint) DstToString() string {
-	return (netip.AddrPort)(e).String()
+	return e.AddrPort.Addr().String()
 }
 
 func (e StdNetEndpoint) SrcToString() string {
@@ -152,14 +166,24 @@ func (bind *StdNetBind) Close() error {
 func (*StdNetBind) makeReceiveIPv4(conn *net.UDPConn) ReceiveFunc {
 	return func(buff []byte) (int, Endpoint, error) {
 		n, endpoint, err := conn.ReadFromUDPAddrPort(buff)
-		return n, asEndpoint(endpoint), err
+		if err != nil {
+			return n, nil, err
+		}
+		return n, &StdNetEndpoint{
+			AddrPort: endpoint,
+		}, err
 	}
 }
 
 func (*StdNetBind) makeReceiveIPv6(conn *net.UDPConn) ReceiveFunc {
 	return func(buff []byte) (int, Endpoint, error) {
 		n, endpoint, err := conn.ReadFromUDPAddrPort(buff)
-		return n, asEndpoint(endpoint), err
+		if err != nil {
+			return n, nil, err
+		}
+		return n, &StdNetEndpoint{
+			AddrPort: endpoint,
+		}, err
 	}
 }
 
@@ -169,7 +193,7 @@ func (bind *StdNetBind) Send(buff []byte, endpoint Endpoint) error {
 	if !ok {
 		return ErrWrongEndpointType
 	}
-	addrPort := netip.AddrPort(nend)
+	addrPort := nend.AddrPort
 
 	bind.mu.Lock()
 	blackhole := bind.blackhole4
@@ -188,25 +212,4 @@ func (bind *StdNetBind) Send(buff []byte, endpoint Endpoint) error {
 	}
 	_, err = conn.WriteToUDPAddrPort(buff, addrPort)
 	return err
-}
-
-// endpointPool contains a re-usable set of mapping from netip.AddrPort to Endpoint.
-// This exists to reduce allocations: Putting a netip.AddrPort in an Endpoint allocates,
-// but Endpoints are immutable, so we can re-use them.
-var endpointPool = sync.Pool{
-	New: func() any {
-		return make(map[netip.AddrPort]Endpoint)
-	},
-}
-
-// asEndpoint returns an Endpoint containing ap.
-func asEndpoint(ap netip.AddrPort) Endpoint {
-	m := endpointPool.Get().(map[netip.AddrPort]Endpoint)
-	defer endpointPool.Put(m)
-	e, ok := m[ap]
-	if !ok {
-		e = Endpoint(StdNetEndpoint(ap))
-		m[ap] = e
-	}
-	return e
 }
